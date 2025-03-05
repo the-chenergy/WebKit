@@ -86,7 +86,7 @@ void ServiceWorkerInspectorProxy::connectToWorker(FrontendChannel& channel, Serv
         [weakDebuggable, isAutomaticConnection, immediatelyPause](ScriptExecutionContext& context) {
             Function<void()> handleFrontendInitialized = [weakDebuggable] {
                 if (RefPtr debuggable = weakDebuggable.get())
-                    debuggable->unpauseForInitializedInspector();
+                    debuggable->unpauseForResolvedAutomaticInspection();
             };
             downcast<WorkerGlobalScope>(context).inspectorController().connectFrontend(isAutomaticConnection, immediatelyPause, WTFMove(handleFrontendInitialized));
         });
