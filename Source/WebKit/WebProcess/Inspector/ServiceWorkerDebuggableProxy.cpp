@@ -30,6 +30,7 @@
 #include "WebProcessProxy.h"
 #include "WebSWContextManagerConnectionMessages.h"
 #include <JavaScriptCore/RemoteConnectionToTarget.h>
+#include <JavaScriptCore/RemoteInspectionTarget.h>
 
 #if ENABLE(REMOTE_INSPECTOR)
 
@@ -53,11 +54,18 @@ ServiceWorkerDebuggableProxy::ServiceWorkerDebuggableProxy(const String& url, We
 {
 }
 
-void ServiceWorkerDebuggableProxy::connect(FrontendChannel& channel, bool, bool)
+void ServiceWorkerDebuggableProxy::connect(FrontendChannel& channel, bool isAutomaticConnection, bool immediatelyPause)
 {
     RELEASE_LOG(Inspector, "ServiceWorkerDebuggableProxy::connect");
-    if (RefPtr webProcessProxy = m_webProcessProxy.get())
+    if (RefPtr webProcessProxy = m_webProcessProxy.get()) {
+#if ENABLE(REMOTE_INSPECTOR_SERVICE_WORKER_AUTO_INSPECTION)
+        webProcessProxy->send(Messages::WebSWContextManagerConnection::ConnectToInspector(m_identifier, isAutomaticConnection, immediatelyPause), 0);
+#else
+        UNUSED_PARAM(isAutomaticConnection);
+        UNUSED_PARAM(immediatelyPause);
         webProcessProxy->send(Messages::WebSWContextManagerConnection::ConnectToInspector(m_identifier), 0);
+#endif
+    }
 }
 
 void ServiceWorkerDebuggableProxy::disconnect(FrontendChannel& channel)
@@ -73,6 +81,23 @@ void ServiceWorkerDebuggableProxy::dispatchMessageFromRemote(String&& message)
     if (RefPtr webProcessProxy = m_webProcessProxy.get())
         webProcessProxy->send(Messages::WebSWContextManagerConnection::DispatchMessageFromInspector(m_identifier, WTFMove(message)), 0);
 }
+
+#if ENABLE(REMOTE_INSPECTOR_SERVICE_WORKER_AUTO_INSPECTION)
+void ServiceWorkerDebuggableProxy::pauseWaitingForAutomaticInspection()
+{
+    RELEASE_LOG(Inspector, "ServiceWorkerDebuggableProxy::pauseWaitingForAutomaticInspection");
+    m_isPausedWaitingForAutomaticInspection = true;
+
+    // No busy-waiting here because the service worker thread already paused itself.
+}
+
+void ServiceWorkerDebuggableProxy::unpauseForResolvedAutomaticInspection()
+{
+    RELEASE_LOG(Inspector, "ServiceWorkerDebuggableProxy::unpauseForResolvedAutomaticInspection");
+    if (RefPtr webProcessProxy = m_webProcessProxy.get())
+        webProcessProxy->send(Messages::WebSWContextManagerConnection::UnpauseServiceWorkerForRejectedAutomaticInspection(m_identifier), 0);
+}
+#endif // ENABLE(REMOTE_INSPECTOR_SERVICE_WORKER_AUTO_INSPECTION)
 
 } // namespace WebKit
 
