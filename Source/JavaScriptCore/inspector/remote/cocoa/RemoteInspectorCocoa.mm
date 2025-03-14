@@ -219,7 +219,11 @@ void RemoteInspector::sendAutomaticInspectionCandidateMessage(TargetID targetID)
     ASSERT(m_relayConnection);
     ASSERT(m_automaticInspectionCandidates.contains(targetID));
 
-    NSDictionary *details = @{ WIRTargetIdentifierKey: @(targetID) };
+    RefPtr inspectionTarget = downcast<RemoteInspectionTarget>(m_targetMap.get(targetID));
+    NSDictionary *details = @{
+        WIRTargetIdentifierKey: @(targetID),
+        WIRTargetAllowsAutomaticInspectionInSameProcessKey: @(inspectionTarget->automaticInspectionAllowedInSameProcess()),
+    };
     m_relayConnection->sendMessage(WIRAutomaticInspectionCandidateMessage, details);
 }
 
