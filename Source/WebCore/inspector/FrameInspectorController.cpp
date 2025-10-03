@@ -32,6 +32,7 @@
 
 #include "CommonVM.h"
 #include "DocumentPage.h"
+#include "FrameConsoleAgent.h"
 #include "FrameInlines.h"
 #include "InspectorController.h"
 #include "InspectorInstrumentation.h"
@@ -61,11 +62,15 @@ WTF_MAKE_TZONE_ALLOCATED_IMPL(FrameInspectorController);
 FrameInspectorController::FrameInspectorController(LocalFrame& frame)
     : m_frame(frame)
     , m_instrumentingAgents(InstrumentingAgents::create(*this, frame.protectedPage()->protectedInspectorController()->instrumentingAgents()))
-    , m_injectedScriptManager(makeUniqueRef<WebInjectedScriptManager>(*this, WebInjectedScriptHost::create()))
+    , m_injectedScriptManager(frame.protectedPage()->protectedInspectorController()->injectedScriptManager())
     , m_frontendRouter(FrontendRouter::create())
     , m_backendDispatcher(BackendDispatcher::create(m_frontendRouter.copyRef()))
     , m_executionStopwatch(Stopwatch::create())
 {
+    auto agentContext = frameAgentContext();
+    std::unique_ptr consoleAgent = makeUnique<FrameConsoleAgent>(agentContext);
+    m_instrumentingAgents->setWebConsoleAgent(consoleAgent.get());
+    m_agents.append(WTFMove(consoleAgent));
 }
 
 FrameInspectorController::~FrameInspectorController()
