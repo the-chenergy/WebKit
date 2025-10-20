@@ -245,6 +245,7 @@ void InspectorConsoleAgent::countReset(JSC::JSGlobalObject* globalObject, const 
 
 void InspectorConsoleAgent::addConsoleMessage(std::unique_ptr<ConsoleMessage> consoleMessage)
 {
+    WTFLogAlways("#=# InspectorConsoleAgent::addConsoleMessage this=%p message=\"%s\" enabled=%i", (void*)this, consoleMessage->message().utf8().data(), int(m_enabled));
     ASSERT_ARG(consoleMessage, consoleMessage);
 
     ConsoleMessage* previousMessage = m_consoleMessages.isEmpty() ? nullptr : m_consoleMessages.last().get();

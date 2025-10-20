@@ -64,7 +64,8 @@ FrameInspectorController::FrameInspectorController(LocalFrame& frame)
     , m_instrumentingAgents(InstrumentingAgents::create(*this, frame.protectedPage()->protectedInspectorController()->instrumentingAgents()))
     , m_injectedScriptManager(frame.protectedPage()->protectedInspectorController()->injectedScriptManager())
     , m_frontendRouter(FrontendRouter::create())
-    , m_backendDispatcher(BackendDispatcher::create(m_frontendRouter.copyRef()))
+    // , m_backendDispatcher(BackendDispatcher::create(m_frontendRouter.copyRef()))
+    , m_backendDispatcher(BackendDispatcher::create(m_frontendRouter.copyRef(), frame.protectedPage()->protectedInspectorController()->backendDispatcher()))
     , m_executionStopwatch(Stopwatch::create())
 {
     auto agentContext = frameAgentContext();
@@ -112,10 +113,6 @@ void FrameInspectorController::createLazyAgents()
         return;
 
     m_didCreateLazyAgents = true;
-
-    m_injectedScriptManager->connect();
-    if (auto& commandLineAPIHost = m_injectedScriptManager->commandLineAPIHost())
-        commandLineAPIHost->init(m_instrumentingAgents.copyRef());
 }
 
 void FrameInspectorController::connectFrontend(Inspector::FrontendChannel& frontendChannel, bool isAutomaticInspection, bool immediatelyPause)
@@ -147,7 +144,6 @@ void FrameInspectorController::disconnectFrontend(Inspector::FrontendChannel& fr
     if (disconnectedLastFrontend) {
         InspectorInstrumentation::unregisterInstrumentingAgents(m_instrumentingAgents.get());
         m_agents.willDestroyFrontendAndBackend(DisconnectReason::InspectorDestroyed);
-        m_injectedScriptManager->discardInjectedScripts();
     }
 }
 
@@ -162,7 +158,6 @@ void FrameInspectorController::inspectedFrameDestroyed()
     InspectorInstrumentation::unregisterInstrumentingAgents(m_instrumentingAgents.get());
     m_agents.willDestroyFrontendAndBackend(DisconnectReason::InspectedTargetDestroyed);
 
-    m_injectedScriptManager->disconnect();
     m_frontendRouter->disconnectAllFrontends();
 
     m_agents.discardValues();

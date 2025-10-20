@@ -46,6 +46,7 @@
 #import <SecurityInterface/SFCertificatePanel.h>
 #import <SecurityInterface/SFCertificateView.h>
 #import <WebCore/CertificateInfo.h>
+#import <WebCore/FrameInspectorController.h>
 #import <WebCore/InspectorController.h>
 #import <WebCore/InspectorFrontendClient.h>
 #import <WebCore/LocalFrame.h>
@@ -55,6 +56,7 @@
 #import <WebKitLegacy/DOMExtensions.h>
 #import <algorithm>
 #import <wtf/NakedPtr.h>
+#import <wtf/TypeCasts.h>
 #import <wtf/cocoa/SpanCocoa.h>
 #import <wtf/text/Base64.h>
 
@@ -119,6 +121,12 @@ FrontendChannel* WebInspectorClient::openLocalFrontend(InspectorController* insp
     [[m_inspectedWebView.get() inspector] setFrontend:webInspectorFrontend.get()];
 
     m_frontendPage->inspectorController().setInspectorFrontendClient(m_frontendClient.get());
+
+    // Really bad code
+    WTFLogAlways("#=# bad code; this=%p page=%p frame=%p", (void*)this, (void*)inspectedPageController->protectedInspectedPage().ptr(), (void*)inspectedPageController->protectedInspectedPage()->localMainFrame().get());
+    inspectedPageController->connectFrontend(*this);
+    if (RefPtr localMainFrame = inspectedPageController->protectedInspectedPage()->localMainFrame())
+        localMainFrame->protectedInspectorController()->connectFrontend(*this);
 
     return this;
 }

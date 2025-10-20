@@ -44,6 +44,8 @@ InspectorProtocol.sendCommand = function(methodOrObject, params, handler)
     else if (!params)
         params = {};
 
+    handler ||= InspectorProtocol.checkForError;
+
     this._dispatchTable[this.getNextMessageId()] = handler;
     let messageObject = {method, params, id: this._requestId};
     this._sendMessage(messageObject);
@@ -153,7 +155,7 @@ InspectorProtocol.checkForError = function(responseObject)
     if (responseObject.error) {
         ProtocolTest.log("PROTOCOL ERROR: " + JSON.stringify(responseObject.error));
         ProtocolTest.completeTest();
-        throw "PROTOCOL ERROR";
+        throw "PROTOCOL ERROR; " + responseObject.error + "; " + JSON.stringify(responseObject.error);
     }
 };
 

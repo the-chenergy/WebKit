@@ -27,6 +27,7 @@ WI.TargetType = {
     ITML: "itml",
     JavaScript: "javascript",
     Page: "page",
+    LegacyPage: "legacy-page",
     ServiceWorker: "service-worker",
     WebPage: "web-page",
     Frame: "frame",

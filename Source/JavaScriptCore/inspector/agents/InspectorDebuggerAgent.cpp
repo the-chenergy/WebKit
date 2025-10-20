@@ -295,6 +295,7 @@ void InspectorDebuggerAgent::internalDisable(bool isBeingDestroyed)
 
 Protocol::ErrorStringOr<void> InspectorDebuggerAgent::enable()
 {
+    WTFLogAlways("#=# InspectorDebuggerAgent::enable enabled=%i", enabled());
     if (enabled())
         return makeUnexpected("Debugger domain already enabled"_s);
 
@@ -596,6 +597,7 @@ Protocol::ErrorStringOr<std::tuple<Protocol::Debugger::BreakpointId, Ref<Protoco
         return makeUnexpected(errorString);
 
     auto scriptIterator = m_scripts.find(sourceID);
+    WTFLogAlways("#=# InspectorDebuggerAgent::setBreakpoint this=%p sourceID=%i found=%i", this, int(sourceID), scriptIterator != m_scripts.end());
     if (scriptIterator == m_scripts.end())
         return makeUnexpected("Missing script for scriptId in given location"_s);
 
@@ -1603,7 +1605,9 @@ void InspectorDebuggerAgent::didParseSource(JSC::SourceID sourceID, const JSC::D
     String sourceURL = script.sourceURL;
     String sourceMappingURL = sourceMapURLForScript(script);
 
+    // WTFLogAlways("#=# InspectorDebuggerAgent::didParseSource (before dispatching) this=%p sourceID=%i script.url='%s'", this, int(sourceID), script.url.utf8().data());
     m_frontendDispatcher->scriptParsed(scriptIDStr, script.url, script.startLine, script.startColumn, script.endLine, script.endColumn, script.isContentScript, sourceURL, sourceMappingURL, script.sourceProvider->sourceType() == JSC::SourceProviderSourceType::Module);
+    // WTFLogAlways("#=# InspectorDebuggerAgent::didParseSource (after dispatching) this=%p sourceID=%i script.url='%s'", this, int(sourceID), script.url.utf8().data());
 
     m_scripts.set(sourceID, script);
 

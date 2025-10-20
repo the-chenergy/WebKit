@@ -38,8 +38,14 @@ function test()
                     ]
                 }
             };
-            InspectorProtocol.sendCommand("Debugger.setBreakpoint", breakpoint, InspectorProtocol.checkForError);
-            InspectorProtocol.sendCommand("Runtime.evaluate", {expression: "runBreakpointWithCondition()"});
+            InspectorProtocol.sendCommand("Debugger.setBreakpoint", breakpoint, (r) => {
+                InspectorProtocol.checkForError(r);
+                ProtocolTest.log(["#=# set breakpoint", breakpoint, JSON.stringify(breakpoint), r, JSON.stringify(r)]);
+                InspectorProtocol.sendCommand("Runtime.evaluate", { expression: "runBreakpointWithCondition()" }, (r) => {
+                    InspectorProtocol.checkForError(r);
+                    ProtocolTest.log(["#=# evaluated?", r, JSON.stringify(r)]);
+                });
+            });
         }
     }
 

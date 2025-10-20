@@ -78,7 +78,7 @@ public:
 
     WEBCORE_EXPORT bool enabled() const;
     Page& inspectedPage() const;
-    Ref<Page> protectedInspectedPage() const;
+    WEBCORE_EXPORT Ref<Page> protectedInspectedPage() const;
 
     WEBCORE_EXPORT void show();
 
@@ -120,6 +120,7 @@ public:
 
     InstrumentingAgents& instrumentingAgents() const { return m_instrumentingAgents.get(); }
     WebInjectedScriptManager& injectedScriptManager() const { return m_injectedScriptManager.get(); }
+    Inspector::BackendDispatcher& backendDispatcher() const { return m_backendDispatcher.get(); }
 
     Inspector::InspectorAgent& ensureInspectorAgent();
     InspectorDOMAgent& ensureDOMAgent();

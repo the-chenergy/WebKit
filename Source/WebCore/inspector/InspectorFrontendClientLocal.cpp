@@ -38,13 +38,14 @@
 #include "DocumentPage.h"
 #include "ExceptionDetails.h"
 #include "FloatRect.h"
+#include "FrameInspectorController.h"
 #include "FrameLoadRequest.h"
 #include "FrameLoader.h"
 #include "InspectorController.h"
 #include "InspectorFrontendHost.h"
 #include "InspectorPageAgent.h"
-#include "LocalFrameInlines.h"
 #include "LocalFrame.h"
+#include "LocalFrameInlines.h"
 #include "LocalFrameView.h"
 #include "Logging.h"
 #include "Page.h"
@@ -121,15 +122,23 @@ private:
 
     void dispatchOneMessage()
     {
-        // Owning frontend client may have been destroyed after the task was scheduled.
-        if (!m_inspectedPageController) {
-            ASSERT(m_messages.isEmpty());
-            return;
+        {
+            RefPtr pageInspectorController = m_inspectedPageController.get();
+            if (!pageInspectorController) {
+                ASSERT(m_messages.isEmpty());
+                return;
+            }
+
+            if (!m_messages.isEmpty()) {
+                WTFLogAlways("#=# InspectorBackendDispatcherTask::dispatchOneMessage this=%p localMainFrame=%p message=\"%s\"", this, pageInspectorController->protectedInspectedPage()->localMainFrame().get(), m_messages.first().utf8().data());
+                if (RefPtr localMainFrame = pageInspectorController->protectedInspectedPage()->localMainFrame())
+                    localMainFrame->protectedInspectorController()->dispatchMessageFromFrontend(m_messages.takeFirst());
+                else
+                    pageInspectorController->dispatchMessageFromFrontend(m_messages.takeFirst());
+            }
         }
 
-        if (!m_messages.isEmpty())
-            Ref { *m_inspectedPageController }->dispatchMessageFromFrontend(m_messages.takeFirst());
-
+        // Owning frontend client may have been destroyed after the task was scheduled.
         if (!m_messages.isEmpty() && m_inspectedPageController)
             scheduleOneShot();
     }
