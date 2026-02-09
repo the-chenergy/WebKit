@@ -32,6 +32,7 @@
 
 #include "CommonVM.h"
 #include "DocumentPage.h"
+#include "FrameConsoleAgent.h"
 #include "FrameInlines.h"
 #include "InspectorInstrumentation.h"
 #include "InspectorWebAgentBase.h"
@@ -43,11 +44,13 @@
 #include "Settings.h"
 #include "WebInjectedScriptHost.h"
 #include "WebInjectedScriptManager.h"
+#include "wtf/Assertions.h"
 #include <JavaScriptCore/InspectorAgentBase.h>
 #include <JavaScriptCore/InspectorBackendDispatcher.h>
 #include <JavaScriptCore/InspectorFrontendRouter.h>
 #include <JavaScriptCore/JSLock.h>
 #include <JavaScriptCore/Strong.h>
+#include <unistd.h>
 #include <wtf/CheckedPtr.h>
 #include <wtf/Stopwatch.h>
 #include <wtf/TZoneMallocInlines.h>
@@ -59,14 +62,24 @@ using namespace Inspector;
 
 WTF_MAKE_TZONE_ALLOCATED_IMPL(FrameInspectorController);
 
-FrameInspectorController::FrameInspectorController(LocalFrame& frame)
+FrameInspectorController::FrameInspectorController(LocalFrame& frame, PageInspectorController& parentPageController)
     : m_frame(frame)
-    , m_instrumentingAgents(InstrumentingAgents::create(*this, protect(frame.page())->protectedInspectorController()->instrumentingAgents()))
-    , m_injectedScriptManager(protect(frame.page())->protectedInspectorController()->injectedScriptManager())
+    , m_instrumentingAgents(InstrumentingAgents::create(*this, parentPageController.instrumentingAgents()))
+    , m_injectedScriptManager(parentPageController.injectedScriptManager())
     , m_frontendRouter(FrontendRouter::create())
-    , m_backendDispatcher(BackendDispatcher::create(m_frontendRouter.copyRef(), &protect(frame.page())->protectedInspectorController()->backendDispatcher()))
+    , m_backendDispatcher(BackendDispatcher::create(m_frontendRouter.copyRef(), &parentPageController.backendDispatcher()))
     , m_executionStopwatch(Stopwatch::create())
 {
+    // Only set this frame's console agent as the WebConsoleAgent if site isolation is enabled.
+    // Otherwise, the page's console agent will be used.
+    static int a = 0x01;
+    if (a || protect(protect(frame.page())->settings())->siteIsolationEnabled()) {
+        auto agentContext = frameAgentContext();
+        UniqueRef consoleAgent = makeUniqueRef<FrameConsoleAgent>(agentContext);
+        m_instrumentingAgents->setWebConsoleAgent(consoleAgent.ptr());
+    WTFLogAlways("#=# [%i] FrameInspectorController this=%p frame=%lli page=%lli si=%i created console agent %p", getpid(), this, (long long)frame.frameID().toUInt64(), frame.page()->identifier() ? (long long)frame.page()->identifier()->toUInt64() : -1LL, frame.page()->settings().siteIsolationEnabled(), consoleAgent.ptr());
+        m_agents.append(WTF::move(consoleAgent));
+    }
 }
 
 FrameInspectorController::~FrameInspectorController()

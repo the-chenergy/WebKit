@@ -31,6 +31,8 @@
 #include "InspectorHeapAgent.h"
 #include "ScriptArguments.h"
 #include "ScriptCallStackFactory.h"
+#include "wtf/Assertions.h"
+#include <unistd.h>
 #include <wtf/SetForScope.h>
 #include <wtf/TZoneMallocInlines.h>
 #include <wtf/text/MakeString.h>
@@ -238,6 +240,7 @@ void InspectorConsoleAgent::countReset(JSC::JSGlobalObject* globalObject, const 
 void InspectorConsoleAgent::addConsoleMessage(std::unique_ptr<ConsoleMessage> consoleMessage)
 {
     ASSERT_ARG(consoleMessage, consoleMessage);
+    WTFLogAlways("#=# [%i] addConsoleMessage this=%p message='%s'", getpid(), this, consoleMessage->message().utf8().data());
 
     ConsoleMessage* previousMessage = m_consoleMessages.isEmpty() ? nullptr : m_consoleMessages.last().get();
 

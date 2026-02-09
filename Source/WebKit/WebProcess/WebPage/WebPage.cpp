@@ -176,6 +176,7 @@
 #include "WebWheelEvent.h"
 #include "WebsiteDataStoreParameters.h"
 #include "WebsitePoliciesData.h"
+#include "wtf/Assertions.h"
 #include <JavaScriptCore/APICast.h>
 #include <JavaScriptCore/JSCInlines.h>
 #include <JavaScriptCore/JSCJSValue.h>
@@ -346,6 +347,7 @@
 #include <algorithm>
 #include <pal/SessionID.h>
 #include <ranges>
+#include <unistd.h>
 #include <wtf/CoroutineUtilities.h>
 #include <wtf/ProcessID.h>
 #include <wtf/RunLoop.h>
@@ -4823,7 +4825,9 @@ void WebPage::updatePreferences(const WebPreferencesStore& store)
 
     Settings& settings = m_page->settings();
 
+    WTFLogAlways("#=# [%i] updatePref this=%p page=%lli before si=%i", getpid(), this, corePage()->identifier() ? corePage()->identifier()->toUInt64() : -1LL, settings.siteIsolationEnabled());
     updateSettingsGenerated(store, settings);
+    WTFLogAlways("#=# [%i] updatePref this=%p page=%lli after  si=%i", getpid(), this, corePage()->identifier() ? corePage()->identifier()->toUInt64() : -1LL, settings.siteIsolationEnabled());
 
 #if !PLATFORM(GTK) && !PLATFORM(WIN) && !PLATFORM(PLAYSTATION) && !PLATFORM(WPE)
     if (!settings.acceleratedCompositingEnabled()) {

@@ -90,8 +90,7 @@ WI.ConsoleManager = class ConsoleManager extends WI.Object
 
     initializeTarget(target)
     {
-        // FIXME: <https://webkit.org/b/298911> Add Console support for FrameTarget.
-        if (target instanceof WI.FrameTarget)
+        if (!target.hasDomain("Console"))
             return;
 
         // Intentionally defer ConsoleAgent initialization to the end. We do this so that any
@@ -161,6 +160,7 @@ WI.ConsoleManager = class ConsoleManager extends WI.Object
 
     messageWasAdded(target, source, level, text, type, url, line, column, repeatCount, parameters, stackTrace, requestId, timestamp)
     {
+        console.log(["#=# messageWasAdded target:", target.identifier, "text:", text, "SI:", WI.targets.some((x) => x instanceof WI.FrameTarget)].join(" "));
         // FIXME: Get a request from request ID.
 
         if (parameters)
@@ -169,8 +169,15 @@ WI.ConsoleManager = class ConsoleManager extends WI.Object
         // COMPATIBILITY (macOS 13.0, iOS 16.0): `stackTrace` was an array of `Console.CallFrame`.
         if (Array.isArray(stackTrace))
             stackTrace = {callFrames: stackTrace};
-        if (stackTrace)
-            stackTrace = WI.StackTrace.fromPayload(target, stackTrace);
+
+        if (stackTrace) {
+            let supportedTarget = target;
+            if (target.type === WI.TargetType.Frame) {
+                // FIXME: <https://webkit.org/b/298909> Add Debugger support for FrameTarget.
+                supportedTarget = WI.assumingMainTarget();
+            }
+            stackTrace = WI.StackTrace.fromPayload(supportedTarget, stackTrace);
+        }
 
         const request = null;
         let message = new WI.ConsoleMessage(target, source, level, text, type, url, line, column, repeatCount, parameters, stackTrace, request, timestamp);
@@ -256,11 +263,8 @@ WI.ConsoleManager = class ConsoleManager extends WI.Object
         this._clearMessagesRequested = true;
 
         for (let target of WI.targets) {
-            // FIXME: <https://webkit.org/b/298911> Add Console support for FrameTarget.
-            if (target instanceof WI.FrameTarget)
-                continue;
-
-            target.ConsoleAgent.clearMessages();
+            if (target.hasDomain("Console"))
+                target.ConsoleAgent.clearMessages();
         }
     }
 

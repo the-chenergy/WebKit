@@ -37,11 +37,13 @@
 #include "WebPageProxy.h"
 #include "WebProcess/Inspector/WebFrameInspectorTarget.h"
 #include "WebsiteDataStore.h"
+#include "wtf/Assertions.h"
 #include <JavaScriptCore/InspectorAgentBase.h>
 #include <JavaScriptCore/InspectorBackendDispatcher.h>
 #include <JavaScriptCore/InspectorBackendDispatchers.h>
 #include <JavaScriptCore/InspectorFrontendRouter.h>
 #include <JavaScriptCore/InspectorTargetAgent.h>
+#include <unistd.h>
 #include <wtf/HashMap.h>
 #include <wtf/TZoneMallocInlines.h>
 
@@ -231,12 +233,14 @@ void WebPageInspectorController::didCommitProvisionalPage(WebCore::PageIdentifie
 
 void WebPageInspectorController::didCreateFrame(WebFrameProxy& frame)
 {
+    WTFLogAlways("#=# [%i] didCreateFrame this=%p frame=%lli si=%i", getpid(), this, frame.frameID().toUInt64(), protect(protect(m_inspectedPage)->preferences())->siteIsolationEnabled());
     if (protect(protect(m_inspectedPage)->preferences())->siteIsolationEnabled())
         addTarget(WebFrameInspectorTargetProxy::create(frame, WebFrameInspectorTarget::toTargetID(frame.frameID())));
 }
 
 void WebPageInspectorController::willDestroyFrame(const WebFrameProxy& frame)
 {
+    WTFLogAlways("#=# [%i] willDestroyFrame this=%p frame=%lli si=%i", getpid(), this, frame.frameID().toUInt64(), protect(protect(m_inspectedPage)->preferences())->siteIsolationEnabled());
     if (protect(protect(m_inspectedPage)->preferences())->siteIsolationEnabled())
         destroyInspectorTarget(WebFrameInspectorTarget::toTargetID(frame.frameID()));
 }

@@ -71,6 +71,7 @@
 #include "SharedBuffer.h"
 #include "WebInjectedScriptHost.h"
 #include "WebInjectedScriptManager.h"
+#include "wtf/Assertions.h"
 #include <JavaScriptCore/IdentifiersFactory.h>
 #include <JavaScriptCore/InspectorAgent.h>
 #include <JavaScriptCore/InspectorBackendDispatcher.h>
@@ -80,6 +81,7 @@
 #include <JavaScriptCore/InspectorFrontendRouter.h>
 #include <JavaScriptCore/InspectorScriptProfilerAgent.h>
 #include <JavaScriptCore/JSLock.h>
+#include <unistd.h>
 #include <wtf/Stopwatch.h>
 #include <wtf/TZoneMallocInlines.h>
 
@@ -106,6 +108,7 @@ PageInspectorController::PageInspectorController(Page& page, std::unique_ptr<Ins
 
     auto consoleAgent = makeUniqueRef<PageConsoleAgent>(pageContext);
     m_instrumentingAgents->setWebConsoleAgent(consoleAgent.ptr());
+    WTFLogAlways("#=# [%i] PageInspectorController this=%p page=%lli created console agent %p", getpid(), this, page.identifier() ? (long long)page.identifier()->toUInt64() : -1LL, consoleAgent.ptr());
     m_agents.append(WTF::move(consoleAgent));
 }
 
